@@ -63,7 +63,7 @@ func main() {
 	}
 
 	rootCmd := &cobra.Command{
-		Use:   "devops-cli",
+		Use:   "devopsctl",
 		Short: "A DevOps automation CLI tool",
 		Long:  "A comprehensive CLI tool for running Terraform, bash scripts, and managing CI/CD pipelines",
 	}

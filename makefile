@@ -3,7 +3,7 @@
 # Makefile
 .PHONY: build install clean test
 
-BINARY_NAME=devops-cli
+BINARY_NAME=devopsctl
 BUILD_DIR=build
 
 build:
