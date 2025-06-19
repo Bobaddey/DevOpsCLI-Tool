@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -38,24 +39,10 @@ func main() {
 		TerraformPath: "terraform",
 	}
 
-	// Prompt for Workspace directory
-	fmt.Print("Enter workspace directory (press Enter for default './workspace'): ")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	workspaceDir := strings.TrimSpace(scanner.Text())
-	if workspaceDir == "" {
-		workspaceDir = "./workspace"
+	// Load or create config
+	if err := loadConfig(); err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
-	config.WorkspaceDir = workspaceDir
-
-	// Prompt for Git branch
-	fmt.Print("Enter Git branch (press Enter for default 'main'): ")
-	scanner.Scan()
-	gitBranch := strings.TrimSpace(scanner.Text())
-	if gitBranch == "" {
-		gitBranch = "main"
-	}
-	config.GitBranch = gitBranch
 
 	// Create workspace directory if it doesn't exist
 	if err := os.MkdirAll(config.WorkspaceDir, 0755); err != nil {
@@ -495,4 +482,43 @@ jobs:
 	defer file.Close()
 
 	return tmpl.Execute(file, template)
+}
+
+func loadConfig() error {
+	configFile := filepath.Join(os.Getenv("HOME"), ".devopsctl.json")
+
+	// Try to load existing config
+	if data, err := os.ReadFile(configFile); err == nil {
+		return json.Unmarshal(data, &config)
+	}
+
+	// If config doesn't exist, prompt for values
+	fmt.Print("Enter workspace directory (press Enter for default './workspace'): ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	workspaceDir := strings.TrimSpace(scanner.Text())
+	if workspaceDir == "" {
+		workspaceDir = "./workspace"
+	}
+	config.WorkspaceDir = workspaceDir
+
+	fmt.Print("Enter Git branch (press Enter for default 'main'): ")
+	scanner.Scan()
+	gitBranch := strings.TrimSpace(scanner.Text())
+	if gitBranch == "" {
+		gitBranch = "main"
+	}
+	config.GitBranch = gitBranch
+
+	// Save the config
+	configData, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal config: %v", err)
+	}
+
+	if err := os.WriteFile(configFile, configData, 0644); err != nil {
+		return fmt.Errorf("failed to save config: %v", err)
+	}
+
+	return nil
 }
